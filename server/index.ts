@@ -1,10 +1,32 @@
+import dotenv from "dotenv"; 
+dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  credentials: true,
+}));
+
+// Session
+app.use(session({
+  secret: process.env.SESSION_SECRET || "supersecretkey123",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,      // true if HTTPS, false for local dev
+    httpOnly: true,
+    sameSite: "lax",    // allow cross-origin cookies
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -64,7 +86,6 @@ app.use((req, res, next) => {
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });
